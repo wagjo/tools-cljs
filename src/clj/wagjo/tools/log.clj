@@ -62,7 +62,7 @@
 (defmacro dir
   "Prints object to console, interactivelly."
   [o]
-  `(.dir js/console o))
+  `(.dir js/console ~o))
 
 (defmacro stack-trace
   "Prints stack trace to console."
