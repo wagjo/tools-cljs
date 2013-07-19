@@ -36,25 +36,25 @@
           (log/debug (str (apply str (interpose \newline t-seq)) " ("
                           (.toFixed (get-avg (dec (.-index t))) 3)
                           ") on " (count (aget times 0))))))))
-  (tracer-stop-benchmark! [t label iterations samples]
-    (let [times (.-times t)]
-      (when (zero? (mod (count (aget times 0)) (.-checkpoint t)))
-        (log/with-group (str "Results for benchmark \"" label
-                             "\" for " iterations
-                             " iterations, median from "
-                             samples " runs")
-          (let [get-avg #(let [ms (sort (seq (aget times %)))]
-                           (nth ms (/ (count ms) 2) 0))
-                t-to-str
-                #(let [label (aget (.-labels t) %)
-                       pt (if (> % 0) (get-avg (dec %)) 0)
-                       ns (str "000" (.toFixed (- (get-avg %) pt) 3))
-                       zfs (str (.substr ns (- (.-length ns) 7))
-                                "ms - "
-                                label)]
-                   zfs)
-                t-seq (map t-to-str (range (.-index t)))]
-            (doseq [t t-seq] (log/debug t)))))))
+  (tracer-report! [t label iterations]
+    (let [title (str "Results for benchmark " label " for "
+                     iterations " iterations, median from "
+                     (.-checkpoint t) " runs")
+          get-avg #(let [ms (sort (seq (aget (.-times t) %)))]
+                     (nth ms (/ (count ms) 2) 0))
+          t-to-str
+          #(let [label (aget (.-labels t) %)
+                 pt (if (> % 0) (get-avg (dec %)) 0)
+                 ns (str "000" (.toFixed (- (get-avg %) pt) 3))]
+             (str (.substr ns (- (.-length ns) 7)) "ms - " label))
+          t-seq (map t-to-str (range (.-index t)))]
+      (cons title t-seq)))
+  (tracer-log! [t label iterations]
+    (let [report (.tracer-report! t label iterations)]
+      (log/with-group (first report)
+        (doseq [t (rest report)]
+          (log/debug t)))
+      report))
   (trace! [t label]
     (let [index (.-index t)
           times (.-times t)
@@ -88,11 +88,15 @@
   []
   (.tracer-stop! global-tracer))
 
-(defn tracer-stop-benchmark!
-  "Finishes measurement. Prints report each time
-   checkpoint is reached."
-  [label iterations samples]
-  (.tracer-stop-benchmark! global-tracer label iterations samples))
+(defn tracer-report!
+  "Returns tracer report as seq of strings."
+  [label iterations]
+  (.tracer-report! global-tracer label iterations))
+
+(defn tracer-log!
+  "Returns tracer report as seq of strings. Logs report to console."
+  [label iterations]
+  (.tracer-log! global-tracer label iterations))
 
 ;;;; Testing
 

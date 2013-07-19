@@ -54,8 +54,8 @@
        (wagjo.tools.profile/tracer-reset!)
        (dotimes [~'_ ~r]
          (wagjo.tools.profile/tracer-start! ~r)
-         ~@bench-body
-         (wagjo.tools.profile/tracer-stop-benchmark! ~label ~l ~r)))))
+         ~@bench-body)
+       (wagjo.tools.profile/tracer-log! ~label ~l))))
 
 
 ;;;; Testing
