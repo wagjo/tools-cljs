@@ -3,7 +3,8 @@
 (ns wagjo.tools.profile
   "Profiling tools."
   (:require-macros [wagjo.tools.profile :as prof]
-                   [wagjo.tools.log :as log]))
+                   [wagjo.tools.log :as log])
+  (:require [clojure.string :as cs]))
 
 ;;;; Implementation details
 
@@ -45,8 +46,14 @@
           t-to-str
           #(let [label (aget (.-labels t) %)
                  pt (if (> % 0) (get-avg (dec %)) 0)
-                 ns (str "000" (.toFixed (- (get-avg %) pt) 3))]
-             (str (.substr ns (- (.-length ns) 7)) "ms - " label))
+                 r (- (get-avg %) pt)
+                 ns (if (>= r 1)
+                     (str "\u00A0\u00A0\u00A0\u00A0" (.toFixed r 3) "ms")
+                     (str "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0" (.floor js/Math (* r 1000)) "μs"))
+                 ns  (if (>= r 1)
+                       (.substr ns (- (.-length ns) 10))
+                       (.substr ns (- (.-length ns) 10)))]
+             (str ns " " label))
           t-seq (map t-to-str (range (.-index t)))]
       (cons title t-seq)))
   (tracer-log! [t label iterations]
